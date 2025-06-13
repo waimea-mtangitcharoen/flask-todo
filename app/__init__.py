@@ -27,15 +27,25 @@ init_error(app)     # Handle errors and exceptions
 #-----------------------------------------------------------
 @app.get("/")
 def index():
-    return render_template("pages/home.jinja")
+    user_id = session["user_id"]
+    
+    with connect_db() as client:
+        # Get all the tasks from the DB
+        sql = """
+            SELECT tasks.id,
+                   tasks.name,
+                   tasks.priority
 
+            FROM tasks
+            JOIN users ON tasks.user_id = users.id
 
-#-----------------------------------------------------------
-# About page route
-#-----------------------------------------------------------
-@app.get("/about/")
-def about():
-    return render_template("pages/about.jinja")
+            ORDER BY tasks.priority ASC
+        """
+        result = client.execute(sql)
+        tasks = result.rows
+
+        # And show them on the page
+        return render_template("pages/home.jinja", tasks=tasks)
 
 
 #-----------------------------------------------------------
@@ -52,30 +62,6 @@ def register_form():
 @app.get("/login")
 def login_form():
     return render_template("pages/login.jinja")
-
-
-#-----------------------------------------------------------
-# Things page route - Show all the things, and new thing form
-#-----------------------------------------------------------
-@app.get("/things/")
-def show_all_things():
-    with connect_db() as client:
-        # Get all the things from the DB
-        sql = """
-            SELECT things.id,
-                   things.name,
-                   users.name AS owner
-
-            FROM things
-            JOIN users ON things.user_id = users.id
-
-            ORDER BY things.name ASC
-        """
-        result = client.execute(sql)
-        things = result.rows
-
-        # And show them on the page
-        return render_template("pages/things.jinja", things=things)
 
 
 #-----------------------------------------------------------
@@ -117,27 +103,27 @@ def show_one_thing(id):
 #-----------------------------------------------------------
 @app.post("/add")
 @login_required
-def add_a_thing():
+def add_a_task():
     # Get the data from the form
     name  = request.form.get("name")
-    price = request.form.get("price")
+    priority = request.form.get("priority")
 
     # Sanitise the inputs
     name = html.escape(name)
-    price = html.escape(price)
+    priority = html.escape(priority)
 
     # Get the user id from the session
     user_id = session["user_id"]
 
     with connect_db() as client:
         # Add the thing to the DB
-        sql = "INSERT INTO things (name, price, user_id) VALUES (?, ?, ?)"
-        values = [name, price, user_id]
+        sql = "INSERT INTO tasks (name, priority, user_id) VALUES (?, ?, ?)"
+        values = [name, priority, user_id]
         client.execute(sql, values)
 
         # Go back to the home page
-        flash(f"Thing '{name}' added", "success")
-        return redirect("/things")
+        flash("A task has been added", "success")
+        return redirect("/")
 
 
 #-----------------------------------------------------------
