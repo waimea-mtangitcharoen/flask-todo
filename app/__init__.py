@@ -26,26 +26,30 @@ init_error(app)     # Handle errors and exceptions
 # Home page route
 #-----------------------------------------------------------
 @app.get("/")
-def index():
-    user_id = session["user_id"]
-    
-    with connect_db() as client:
-        # Get all the tasks from the DB
-        sql = """
-            SELECT tasks.id,
-                   tasks.name,
-                   tasks.priority
+def index(): 
+    if "logged_in" in session:
+        user_id = session["user_id"]
+        with connect_db() as client:
+            # Get all the tasks from the DB
+                sql = """
+                    SELECT id,
+                        name,
+                        priority
 
-            FROM tasks
-            JOIN users ON tasks.user_id = users.id
+                    FROM tasks
 
-            ORDER BY tasks.priority ASC
-        """
-        result = client.execute(sql)
-        tasks = result.rows
+                    WHERE user_id=?
 
-        # And show them on the page
-        return render_template("pages/home.jinja", tasks=tasks)
+                    ORDER BY priority ASC
+                """
+                params = [user_id]
+                result = client.execute(sql, params)
+                tasks = result.rows
+
+            # And show them on the page
+                return render_template("pages/home.jinja", tasks=tasks)
+    else:
+        return render_template("pages/welcome.jinja")
 
 
 #-----------------------------------------------------------
@@ -67,34 +71,34 @@ def login_form():
 #-----------------------------------------------------------
 # Thing page route - Show details of a single thing
 #-----------------------------------------------------------
-@app.get("/thing/<int:id>")
-def show_one_thing(id):
-    with connect_db() as client:
-        # Get the thing details from the DB, including the owner info
-        sql = """
-            SELECT things.id,
-                   things.name,
-                   things.price,
-                   things.user_id,
-                   users.name AS owner
+# @app.get("/thing/<int:id>")
+# def show_one_thing(id):
+#     with connect_db() as client:
+#         # Get the thing details from the DB, including the owner info
+#         sql = """
+#             SELECT things.id,
+#                    things.name,
+#                    things.price,
+#                    things.user_id,
+#                    users.name AS owner
 
-            FROM things
-            JOIN users ON things.user_id = users.id
+#             FROM things
+#             JOIN users ON things.user_id = users.id
 
-            WHERE things.id=?
-        """
-        values = [id]
-        result = client.execute(sql, values)
+#             WHERE things.id=?
+#         """
+#         values = [id]
+#         result = client.execute(sql, values)
 
-        # Did we get a result?
-        if result.rows:
-            # yes, so show it on the page
-            thing = result.rows[0]
-            return render_template("pages/thing.jinja", thing=thing)
+#         # Did we get a result?
+#         if result.rows:
+#             # yes, so show it on the page
+#             thing = result.rows[0]
+#             return render_template("pages/thing.jinja", thing=thing)
 
-        else:
-            # No, so show error
-            return not_found_error()
+#         else:
+#             # No, so show error
+#             return not_found_error()
 
 
 #-----------------------------------------------------------
@@ -132,13 +136,13 @@ def add_a_task():
 #-----------------------------------------------------------
 @app.get("/delete/<int:id>")
 @login_required
-def delete_a_thing(id):
+def delete_a_task(id):
     # Get the user id from the session
     user_id = session["user_id"]
 
     with connect_db() as client:
         # Delete the thing from the DB only if we own it
-        sql = "DELETE FROM things WHERE id=? AND user_id=?"
+        sql = "DELETE FROM taks WHERE id=? AND user_id=?"
         values = [id, user_id]
         client.execute(sql, values)
 
