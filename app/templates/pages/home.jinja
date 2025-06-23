@@ -29,8 +29,25 @@
 
                 <li>
                     <a href="/tasks/{{ tasks.id }}">
+
+                    {# Show this if the task is completed #}
+                    {% if task.completed %}
+                        <span class="complete"> 
+                            <a href="/incomplete/{{ task.id }}">
+                                🗹
+                            </a> 
+                        </span>
+
+                    {% else %}
+                        <span class="notComplete"> 
+                            <a href="/complete/{{ task.id }}">
+                                ☐ 
+                            </a>
+                        </span>
+                    {% endif %}
+
                     <span class="priority"> {{ task.priority }} </span>
-                    {{ task.name }}
+                    <span class="taskName"> {{ task.name }}     </span>
                     </a>
                 </li>
 
@@ -56,14 +73,16 @@
                     required
                 >
 
-                <input
-                    type="number"
-                    name="priority"
-                    min="1"
-                    max="5"
-                    placeholder="Priority"
-                    required
-                >
+                <details class="dropdown">
+                <summary>Dropdown</summary>
+                <ul>
+                    <li><a href="#">1</a></li>
+                    <li><a href="#">2</a></li>
+                    <li><a href="#">3</a></li>
+                    <li><a href="#">4</a></li>
+                    
+                </ul>
+                </details>
 
                 <button>Add</button>
 

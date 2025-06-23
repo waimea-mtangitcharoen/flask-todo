@@ -34,7 +34,8 @@ def index():
                 sql = """
                     SELECT id,
                         name,
-                        priority
+                        priority,
+                        completed
 
                     FROM tasks
 
@@ -142,13 +143,51 @@ def delete_a_task(id):
 
     with connect_db() as client:
         # Delete the thing from the DB only if we own it
-        sql = "DELETE FROM taks WHERE id=? AND user_id=?"
+        sql = "DELETE FROM task WHERE id=? AND user_id=?"
         values = [id, user_id]
         client.execute(sql, values)
 
         # Go back to the home page
         flash("Thing deleted", "success")
         return redirect("/things")
+    
+#-----------------------------------------------------------
+# Route for completing a task, Id given in the route
+# - Restricted to logged in users
+#-----------------------------------------------------------
+@app.get("/complete/<int:id>")
+@login_required
+def complete_a_task(id):
+    # Get the user id from the session
+    user_id = session["user_id"]
+
+    with connect_db() as client:
+        # Delete the thing from the DB only if we own it
+        sql = "UPDATE tasks SET completed = '1' WHERE id=? AND user_id=?"
+        values = [id, user_id]
+        client.execute(sql, values)
+
+        return redirect("/")
+    
+#-----------------------------------------------------------
+# Route for incompleting a task, Id given in the route
+# - Restricted to logged in users
+#-----------------------------------------------------------
+@app.get("/incomplete/<int:id>")
+@login_required
+def incomplete_a_task(id):
+    # Get the user id from the session
+    user_id = session["user_id"]
+
+    with connect_db() as client:
+        # Delete the thing from the DB only if we own it
+        sql = "UPDATE tasks SET completed = '0' WHERE id=? AND user_id=?"
+        values = [id, user_id]
+        client.execute(sql, values)
+
+        return redirect("/")
+    
+
 
 
 #-----------------------------------------------------------
